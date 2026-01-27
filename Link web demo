@@ -1,5 +1,7 @@
 Link web cloud: https://crop-yield-recommendation-app-b5dnjcrv4n5vproneazaas.streamlit.app/
 
+Link notebook: https://colab.research.google.com/drive/1hc6bq6IR_ok7kM_MS_MuP3MWYsm27Y1m#scrollTo=-2kQZkh-R4Ho
+
 Giải thích về train thuật toán:
 - đầu tiên, dùng spark để train thuật toán dự đoán yield và đánh giá các mô hình được train
 - so sánh và chọn Random Forest làm thuật toán quyết định
@@ -7,3 +9,6 @@ Giải thích về train thuật toán:
 - joblib
 - build app
 - deploy streamlit cloud. 
+
+Các hướng có thể phát triển:
+- sử dụng DATA Brick
