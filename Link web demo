@@ -1,0 +1,9 @@
+Link web cloud: https://crop-yield-recommendation-app-b5dnjcrv4n5vproneazaas.streamlit.app/
+
+Giải thích về train thuật toán:
+- đầu tiên, dùng spark để train thuật toán dự đoán yield và đánh giá các mô hình được train
+- so sánh và chọn Random Forest làm thuật toán quyết định
+- dùng sklearn, và train lại thuật toán Random Forest dùng cho dự đoán năng suất của từng loại cây trồng và đưa ra recommendation. 
+- joblib
+- build app
+- deploy streamlit cloud. 
