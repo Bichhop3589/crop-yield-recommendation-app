@@ -359,12 +359,23 @@ with tab2:
             use_container_width=True
         )
 
-        # ===== PREPARE DATA FOR GENAI =====
-        summary_text = ""
-        for _, row in top3.iterrows():
-            summary_text += f"- {row['crop_type']}: {row['predicted_yield']:.1f} kg/ha\n"
+# ===== PREPARE DATA FOR GENAI (SAFE FOR STREAMLIT) =====
 
-        question = f"""
+# Ensure crop_type exists as a column
+if "crop_type" not in top3.columns:
+    top3 = top3.reset_index()
+
+if "crop_type" not in top3.columns:
+    top3["crop_type"] = "Unknown crop"
+
+summary_text = ""
+for _, row in top3.iterrows():
+    crop = row.get("crop_type", "Unknown crop")
+    yield_val = row.get("predicted_yield", 0)
+
+    summary_text += f"- {crop}: {yield_val:.1f} kg/ha\n"
+
+question = f"""
 Dựa trên kết quả dự đoán năng suất sau:
 
 {summary_text}
@@ -375,16 +386,16 @@ Yêu cầu:
 3. Gợi ý lựa chọn cây trồng phù hợp nhất để canh tác
 """
 
-        fake_result = {
-            "crop_type": "Top cây trồng",
-            "predicted_yield": float(top3.iloc[0]["predicted_yield"]),
-            "features": features
-        }
+fake_result = {
+    "crop_type": "Top cây trồng",
+    "predicted_yield": float(top3.iloc[0]["predicted_yield"]),
+    "features": features
+}
 
-        with st.spinner("🤖 AI đang tổng hợp và tư vấn..."):
-            advice = assistant.get_advice(fake_result, question)
+with st.spinner("🤖 AI đang tổng hợp và tư vấn..."):
+    advice = assistant.get_advice(fake_result, question)
 
-        st.info(advice)
+st.info(advice)
 
 # ===============================
 # FOOTER
