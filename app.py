@@ -346,36 +346,39 @@ with tab2:
     st.subheader("🌱 Đề xuất Top 3 cây trồng phù hợp")
 
     if st.button("🌿 Đề xuất cây trồng"):
-        top3 = recommender.recommend_top_k(features, k=3)
+        top3_raw = recommender.recommend_top_k(features, k=3)
 
-        # LƯU VÀO SESSION STATE
-        st.session_state.top3 = top3.copy()
+        # LƯU BẢN RAW CHO GENAI
+        st.session_state.top3_raw = top3_raw.copy()
+
+        # BẢN CHO UI (đổi tên cột cho đẹp)
+        top3_ui = top3_raw.rename(columns={
+            "crop_type": "Loại cây trồng",
+            "predicted_yield": "Năng suất dự kiến (kg/ha)"
+        })
 
         st.dataframe(
-            top3.reset_index(drop=True),
+            top3_ui.reset_index(drop=True),
             use_container_width=True
         )
 
         st.success("✅ Đề xuất dựa trên mô hình Machine Learning đã huấn luyện")
-# ===== PREPARE DATA FOR GENAI (SAFE FOR STREAMLIT) =====
+
+
 # ===== GENAI ANALYSIS FOR TOP 3 (SAFE STREAMLIT) =====
 
-top3 = st.session_state.get("top3")
+# ===== GENAI ANALYSIS FOR TOP 3 (REAL DATA) =====
+
+top3 = st.session_state.get("top3_raw")
 
 if top3 is not None and not top3.empty:
 
-    # đảm bảo crop_type tồn tại
-    if "crop_type" not in top3.columns:
-        top3 = top3.reset_index()
-
-    if "crop_type" not in top3.columns:
-        top3["crop_type"] = "Unknown crop"
-
     summary_text = ""
     for _, row in top3.iterrows():
-        crop = row.get("crop_type", "Unknown crop")
-        yield_val = row.get("predicted_yield", 0)
-        summary_text += f"- {crop}: {yield_val:.1f} kg/ha\n"
+        summary_text += (
+            f"- {row['crop_type']}: "
+            f"{row['predicted_yield']:.1f} kg/ha\n"
+        )
 
     question = f"""
 Dựa trên kết quả dự đoán năng suất sau:
@@ -388,19 +391,20 @@ Yêu cầu:
 3. Gợi ý lựa chọn cây trồng phù hợp nhất để canh tác
 """
 
-    fake_result = {
-        "crop_type": "Top cây trồng",
-        "predicted_yield": float(top3.iloc[0]["predicted_yield"]),
+    # DÙNG KẾT QUẢ THẬT, KHÔNG GIẢ
+    context = {
+        "top3_crops": top3.to_dict(orient="records"),
         "features": features
     }
 
-    with st.spinner("🤖 AI đang tổng hợp và tư vấn..."):
-        advice = assistant.get_advice(fake_result, question)
+    with st.spinner("🤖 AI đang phân tích và tư vấn chuyên sâu..."):
+        advice = assistant.get_advice(context, question)
 
     st.info(advice)
 
 else:
-    st.info("Ứng dụng dùng Gen AI hỗ trợ phân tích kết quả")
+    st.info("👆 Hãy nhấn **Đề xuất cây trồng** để AI phân tích chi tiết.")
+
 
 
 # ===============================
