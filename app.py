@@ -347,35 +347,37 @@ with tab2:
 
     if st.button("🌿 Đề xuất cây trồng"):
         top3 = recommender.recommend_top_k(features, k=3)
-        # Đổi tên cột cho thân thiện người dùng
-        top3 = top3.rename(columns={
-            "crop_type": "Loại cây trồng",
-            "predicted_yield": "Năng suất dự kiến (kg/ha)"
-        })
 
+        # LƯU VÀO SESSION STATE
+        st.session_state.top3 = top3.copy()
 
         st.dataframe(
             top3.reset_index(drop=True),
             use_container_width=True
         )
 
+        st.success("✅ Đề xuất dựa trên mô hình Machine Learning đã huấn luyện")
 # ===== PREPARE DATA FOR GENAI (SAFE FOR STREAMLIT) =====
+# ===== GENAI ANALYSIS FOR TOP 3 (SAFE STREAMLIT) =====
 
-# Ensure crop_type exists as a column
-if "crop_type" not in top3.columns:
-    top3 = top3.reset_index()
+top3 = st.session_state.get("top3")
 
-if "crop_type" not in top3.columns:
-    top3["crop_type"] = "Unknown crop"
+if top3 is not None and not top3.empty:
 
-summary_text = ""
-for _, row in top3.iterrows():
-    crop = row.get("crop_type", "Unknown crop")
-    yield_val = row.get("predicted_yield", 0)
+    # đảm bảo crop_type tồn tại
+    if "crop_type" not in top3.columns:
+        top3 = top3.reset_index()
 
-    summary_text += f"- {crop}: {yield_val:.1f} kg/ha\n"
+    if "crop_type" not in top3.columns:
+        top3["crop_type"] = "Unknown crop"
 
-question = f"""
+    summary_text = ""
+    for _, row in top3.iterrows():
+        crop = row.get("crop_type", "Unknown crop")
+        yield_val = row.get("predicted_yield", 0)
+        summary_text += f"- {crop}: {yield_val:.1f} kg/ha\n"
+
+    question = f"""
 Dựa trên kết quả dự đoán năng suất sau:
 
 {summary_text}
@@ -386,16 +388,20 @@ Yêu cầu:
 3. Gợi ý lựa chọn cây trồng phù hợp nhất để canh tác
 """
 
-fake_result = {
-    "crop_type": "Top cây trồng",
-    "predicted_yield": float(top3.iloc[0]["predicted_yield"]),
-    "features": features
-}
+    fake_result = {
+        "crop_type": "Top cây trồng",
+        "predicted_yield": float(top3.iloc[0]["predicted_yield"]),
+        "features": features
+    }
 
-with st.spinner("🤖 AI đang tổng hợp và tư vấn..."):
-    advice = assistant.get_advice(fake_result, question)
+    with st.spinner("🤖 AI đang tổng hợp và tư vấn..."):
+        advice = assistant.get_advice(fake_result, question)
 
-st.info(advice)
+    st.info(advice)
+
+else:
+    st.info("👆 Hãy nhấn **Đề xuất cây trồng** để AI phân tích chi tiết.")
+
 
 # ===============================
 # FOOTER
