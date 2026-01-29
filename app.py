@@ -342,70 +342,46 @@ Yêu cầu:
 # =========================================================
 # TAB 2: TOP 3 RECOMMENDATION + GENAI ANALYSIS
 # =========================================================
+# =========================================================
+# TAB 2: TOP 3 RECOMMENDATION + GENAI ANALYSIS
+# =========================================================
 with tab2:
     st.subheader("🌱 Đề xuất Top 3 cây trồng phù hợp")
 
-    if st.button("🌿 Đề xuất cây trồng"):
-        top3_raw = recommender.recommend_top_k(features, k=3)
-
-        # LƯU BẢN RAW CHO GENAI
-        st.session_state.top3_raw = top3_raw.copy()
-
-        # BẢN CHO UI (đổi tên cột cho đẹp)
-        top3_ui = top3_raw.rename(columns={
-            "crop_type": "Loại cây trồng",
-            "predicted_yield": "Năng suất dự kiến (kg/ha)"
-        })
+    if st.button("Đề xuất cây trồng"):
+        top3 = recommender.recommend_top_k(features, k=3)
 
         st.dataframe(
-            top3_ui.reset_index(drop=True),
+            top3.reset_index(drop=True),
             use_container_width=True
         )
 
-        st.success("✅ Đề xuất dựa trên mô hình Machine Learning đã huấn luyện")
+        # ===== PREPARE DATA FOR GENAI =====
+        summary_text = ""
+        for _, row in top3.iterrows():
+            summary_text += f"- {row['crop_type']}: {row['predicted_yield']:.1f} kg/ha\n"
 
-
-# ===== GENAI ANALYSIS FOR TOP 3 (SAFE STREAMLIT) =====
-
-# ===== GENAI ANALYSIS FOR TOP 3 (REAL DATA) =====
-
-top3 = st.session_state.get("top3_raw")
-
-if top3 is not None and not top3.empty:
-
-    summary_text = ""
-    for _, row in top3.iterrows():
-        summary_text += (
-            f"- {row['crop_type']}: "
-            f"{row['predicted_yield']:.1f} kg/ha\n"
-        )
-
-    question = f"""
+        question = f"""
 Dựa trên kết quả dự đoán năng suất sau:
 
 {summary_text}
 
 Yêu cầu:
 1. Giải thích vì sao các cây này được đề xuất
-2. So sánh cây có năng suất cao nhất với các cây còn lại
-3. Gợi ý lựa chọn cây trồng phù hợp nhất để canh tác
+2. Điều kiện khí hậu hiện tại có phù hợp không
+3. Đưa ra 2–3 khuyến nghị canh tác thực tế cho nông dân
 """
 
-    # DÙNG KẾT QUẢ THẬT, KHÔNG GIẢ
-    context = {
-        "top3_crops": top3.to_dict(orient="records"),
-        "features": features
-    }
+        fake_result = {
+            "crop_type": top3.iloc[0]["crop_type"],
+            "predicted_yield": float(top3.iloc[0]["predicted_yield"]),
+            "features": features
+        }
 
-    with st.spinner("🤖 AI đang phân tích và tư vấn chuyên sâu..."):
-        advice = assistant.get_advice(context, question)
+        with st.spinner("🤖 AI đang tổng hợp và tư vấn..."):
+            advice = assistant.get_advice(fake_result, question)
 
-    st.info(advice)
-
-else:
-    st.info("👆 Hãy nhấn **Đề xuất cây trồng** để AI phân tích chi tiết.")
-
-
+        st.info(advice)
 
 # ===============================
 # FOOTER
