@@ -400,7 +400,7 @@ Yêu cầu:
     st.info(advice)
 
 else:
-    st.info("👆 Hãy nhấn **Đề xuất cây trồng** để AI phân tích chi tiết.")
+    st.info("Ứng dụng dùng Gen AI hỗ trợ phân tích kết quả")
 
 
 # ===============================
